@@ -5,12 +5,27 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { QRCodeCanvas } from "qrcode.react";
 
+// Add this near the top of your file if you get TS errors about canShare
+// interface NavigatorWithShare extends Navigator {
+//   canShare?: (data: { files?: File[] }) => boolean;
+// }
+
+// Add this function at the top, after your imports
+const isBrowser = () => typeof window !== 'undefined';
+
 const ShortenerForm = () => {
   const [url, setUrl] = useState("");
   const [expiry, setExpiry] = useState("86400"); // Default: 1 day
   const [shortUrl, setShortUrl] = useState("");
   const [copied, setCopied] = useState(false);
-  const qrCodeRef = useRef(null);
+  const [canShare, setCanShare] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const qrCodeRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    // Check browser capabilities after mounting
+    setCanShare(typeof navigator !== 'undefined' && !!navigator.share);
+  }, []);
 
   // Define style constants
   const INPUT = "w-full p-3 border border-gray-400 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400";
@@ -21,11 +36,12 @@ const ShortenerForm = () => {
   const ACTION_BUTTON = "flex-1 py-2 px-4 rounded-lg text-white transition duration-300";
 
   const handleShorten = async () => {
-    if (!url) {
-      toast.error("Please enter a URL");
+    if (!url || !url.match(/^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/)) {
+      toast.error("Please enter a valid URL");
       return;
     }
 
+    setIsLoading(true);
     try {
       const response = await axios.post("/api/shorten", { originalUrl: url, expiry: Number(expiry) });
       setShortUrl(response.data.shortUrl);
@@ -33,6 +49,8 @@ const ShortenerForm = () => {
     } catch (error) {
       toast.error("Failed to shorten URL");
       console.error("Shorten error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,7 +83,7 @@ const ShortenerForm = () => {
 
   const handleShareUrl = async () => {
     try {
-      if (navigator && navigator.share) {
+      if (isBrowser() && navigator.share) {
         await navigator.share({
           title: 'Shortened URL',
           text: 'Check out this shortened URL!',
@@ -92,13 +110,19 @@ const ShortenerForm = () => {
     }
 
     try {
-      // Convert canvas to blob
-      const canvas = qrCodeRef.current;
-      const blob = await new Promise(resolve => {
-        canvas.toBlob(resolve, 'image/png');
+      // Convert canvas to blob - with better type handling
+      const canvas = qrCodeRef.current as HTMLCanvasElement;
+      const blob = await new Promise<Blob | null>((resolve) => {
+        // Type assertion to fix the error
+        (canvas as HTMLCanvasElement).toBlob((b) => resolve(b), 'image/png');
       });
       
-      if (navigator.share && blob) {
+      if (!blob) {
+        toast.error("Could not generate QR code image");
+        return;
+      }
+      
+      if (isBrowser() && navigator.share && blob) {
         try {
           const file = new File([blob], 'qr-code.png', { type: 'image/png' });
           

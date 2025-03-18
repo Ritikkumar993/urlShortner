@@ -3,13 +3,25 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Add any classes that might be in variables */
+/* Separate classes to avoid conflicts */
 @layer utilities {
-  .debug-safelist {
-    @apply w-full p-3 border border-gray-400 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400
-           bg-blue-600 text-white py-3 hover:bg-blue-700 transition duration-300
-           max-w-lg mx-auto p-8 bg-gray-50 shadow-md
-           text-3xl font-extrabold mb-6 text-gray-800
-           text-blue-600 underline hover:text-blue-800;
+  .input-styles {
+    @apply w-full p-3 border border-gray-400 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400;
+  }
+  
+  .button-styles {
+    @apply bg-blue-600 text-white py-3 hover:bg-blue-700 transition duration-300;
+  }
+  
+  .container-styles {
+    @apply max-w-lg mx-auto p-8 bg-gray-50 shadow-md;
+  }
+  
+  .heading-styles {
+    @apply text-3xl font-extrabold mb-6 text-gray-800;
+  }
+  
+  .link-styles {
+    @apply text-blue-600 underline hover:text-blue-800;
   }
 }
