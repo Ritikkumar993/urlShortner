@@ -79,7 +79,7 @@ const ShortenerForm = () => {
       }
     } catch (err) {
       console.error("Share error:", err);
-      if (err.name !== 'AbortError') {
+      if (err instanceof Error && err.name !== 'AbortError') {
         toast.error("Failed to share URL");
       }
     }
